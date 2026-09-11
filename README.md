@@ -11,11 +11,28 @@ source using the C# compiler that is already inside Windows.
 
 ## Install
 
+### Easiest: download and double-click
+
+1. Click the green **Code** button above, then **Download ZIP**
+2. Extract it anywhere
+3. Double-click **`install.cmd`**
+
+No commands to type. If Windows shows a "protected your PC" notice, choose
+**More info -> Run anyway** - it appears for any script downloaded from the web.
+
+### One-liner
+
+In PowerShell:
+
 ```powershell
 irm https://raw.githubusercontent.com/jithin-jz/windows-desktop-widgets/main/install.ps1 | iex
 ```
 
-Or from a clone:
+Copy that **whole line**. It starts with `irm` and ends with `| iex`; pasting
+only the URL makes PowerShell try to run the address as a command and fail with
+`is not recognized as the name of a cmdlet`.
+
+### From a clone
 
 ```powershell
 git clone https://github.com/jithin-jz/windows-desktop-widgets.git

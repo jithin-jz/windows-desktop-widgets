@@ -94,7 +94,8 @@ if ($running) {
 
 # ------------------------------------------------------------------ copy files
 New-Item -ItemType Directory -Force $InstallDir | Out-Null
-foreach ($item in 'src', 'launcher', 'fonts', 'build.cmd', 'check-font.ps1', 'uninstall.ps1', 'README.md') {
+foreach ($item in 'src', 'launcher', 'fonts', 'build.cmd', 'check-font.ps1',
+    'install.ps1', 'install.cmd', 'uninstall.ps1', 'README.md', 'LICENSE') {
     $from = Join-Path $srcRoot $item
     if (Test-Path $from) { Copy-Item $from -Destination $InstallDir -Recurse -Force }
 }
