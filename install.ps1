@@ -21,6 +21,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Windows PowerShell 5.1 can still default to TLS 1.0, which GitHub refuses.
+# Without this the download step fails with an unhelpful connection error.
+try {
+    [Net.ServicePointManager]::SecurityProtocol =
+        [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+}
+catch { }
+
 function Say ($m) { Write-Host $m }
 function Good ($m) { Write-Host "  OK    $m" -ForegroundColor Green }
 function Warn ($m) { Write-Host "  WARN  $m" -ForegroundColor Yellow }
