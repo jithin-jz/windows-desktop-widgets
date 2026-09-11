@@ -1,0 +1,18 @@
+# Build output. Rebuilt from src\ by build.cmd in about a second.
+bin/
+
+# Fonts are deliberately NOT redistributed.
+#
+# The day banner is designed for Anurati (by Emmeran Richard), which is licensed
+# for personal use only. Bundling it in a public repo would be redistribution,
+# which that licence does not allow. Each user downloads it themselves and drops
+# it into fonts\ - see fonts\README.txt. Without it the banner falls back to
+# Century Gothic and everything still works.
+fonts/*.otf
+fonts/*.ttf
+fonts/*.woff
+fonts/*.woff2
+
+# Local scratch
+*.log
+*.bak
