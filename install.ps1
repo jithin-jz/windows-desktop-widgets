@@ -2,7 +2,7 @@
     Installs the desktop widgets.
 
     One-liner (no clone needed):
-        irm https://raw.githubusercontent.com/OWNER/REPO/main/install.ps1 | iex
+        irm https://raw.githubusercontent.com/jithin-jz/windows-desktop-widgets/main/install.ps1 | iex
 
     From a clone:
         .\install.ps1

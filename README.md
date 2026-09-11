@@ -12,14 +12,14 @@ source using the C# compiler that is already inside Windows.
 ## Install
 
 ```powershell
-irm https://raw.githubusercontent.com/OWNER/REPO/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/jithin-jz/windows-desktop-widgets/main/install.ps1 | iex
 ```
 
 Or from a clone:
 
 ```powershell
-git clone https://github.com/OWNER/REPO.git
-cd REPO
+git clone https://github.com/jithin-jz/windows-desktop-widgets.git
+cd windows-desktop-widgets
 .\install.ps1
 ```
 
@@ -211,3 +211,13 @@ the track — the widget reads the same source.
 **Cards partly off-screen on a small display.** The card block is 688px tall;
 on a short work area the last card can sit under the taskbar. Drag it where you
 want it — positions persist.
+
+---
+
+## Licence
+
+Code is [MIT](LICENSE).
+
+The **Anurati** typeface is not covered by that licence and is not included in
+this repository — it is licensed for personal use only. See
+[the font section](#the-display-font).
