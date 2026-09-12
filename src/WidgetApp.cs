@@ -160,37 +160,38 @@ namespace KiroWidgets
             double x1 = gx, x2 = gx + Pitch;
             double y1 = gy, y2 = gy + Pitch, y3 = gy + (Pitch * 2), y4 = gy + (Pitch * 3);
 
-            Window clock = NewWidget("Clock", Markup.Clock, x1, y1, false);
+            Window clock = NewWidget("Clock", Markup.Clock, x1, y1, Unit, Unit, false, wa);
             Register(clock, "TimeText", "AmPmText", "DayText", "DateText");
 
-            Window weather = NewWidget("Weather", Markup.Weather, x2, y1, false);
+            Window weather = NewWidget("Weather", Markup.Weather, x2, y1, Unit, Unit, false, wa);
             Register(weather, "WxPlace", "WxIcon", "WxTemp", "WxDesc", "WxRange");
 
-            Window player = NewWidget("Media", Markup.Media, x1, y2, false);
+            Window player = NewWidget("Media", Markup.Media, x1, y2, blockW, Unit, false, wa);
             Register(player, "MediaTitle", "MediaArtist", "BtnPrev", "BtnPlay", "BtnNext", "ArtBorder", "ArtGlyph",
                      "WaveDim", "WaveLit", "WaveHost");
 
-            Window system = NewWidget("System", Markup.SysStats, x1, y3, false);
+            Window system = NewWidget("System", Markup.SysStats, x1, y3, Unit, Unit, false, wa);
             Register(system, "CpuText", "CpuBar", "RamText", "RamBar", "DiskText");
 
             if (Native.HasBattery())
             {
-                Window battery = NewWidget("Battery", Markup.Battery, x2, y3, false);
+                Window battery = NewWidget("Battery", Markup.Battery, x2, y3, Unit, Unit, false, wa);
                 Register(battery, "BattStatus", "BattText", "BattBar");
             }
 
-            Window notes = NewWidget("Notes", Markup.Notes, x1, y4, true);
+            Window notes = NewWidget("Notes", Markup.Notes, x1, y4, blockW, Unit, true, wa);
             Register(notes, "NotesBox");
 
             // Top centre, measured from the work area so the taskbar is respected.
             double bx = Math.Round((wa.Left + ((wa.Width - BannerWidth) / 2)) / 8) * 8;
             double by = Math.Round((wa.Top + BannerTop) / 8) * 8;
             if (bx < minX) bx = minX;
-            Window banner = NewWidget("DayBanner", Markup.DayBanner, bx, by, false);
+            Window banner = NewWidget("DayBanner", Markup.DayBanner, bx, by, BannerWidth, BannerSize, false, wa);
             Register(banner, "BannerRow");
         }
 
-        private Window NewWidget(string name, string body, double defLeft, double defTop, bool interactive)
+        private Window NewWidget(string name, string body, double defLeft, double defTop,
+                                  double width, double height, bool interactive, Rect wa)
         {
             string xaml = Markup.WindowHead + Markup.Styles + body + "</Window>";
             xaml = xaml.Replace("__SMALL__", Unit.ToString(CultureInfo.InvariantCulture))
@@ -219,8 +220,21 @@ namespace KiroWidgets
             {
                 w.Left = defLeft;
                 w.Top = defTop;
-                store.Layout[name] = new Point2(defLeft, defTop);
             }
+
+            // A saved position is an absolute point in Windows' virtual desktop
+            // space, which shifts whenever a monitor is added, removed or
+            // rearranged - a spot that used to sit at the right edge can end up
+            // anywhere, including looking centred, once that space changes. This
+            // pulls the card back into the *current* work area if the saved (or
+            // default) spot no longer fits, so a monitor change repositions it
+            // sanely instead of leaving it stranded. A position that is still
+            // valid is left exactly as it was.
+            double maxLeft = wa.Right - width;
+            double maxTop = wa.Bottom - height;
+            if (w.Left < wa.Left || w.Left > maxLeft) w.Left = Math.Max(wa.Left, Math.Min(defLeft, maxLeft));
+            if (w.Top < wa.Top || w.Top > maxTop) w.Top = Math.Max(wa.Top, Math.Min(defTop, maxTop));
+            store.Layout[name] = new Point2(w.Left, w.Top);
 
             bool isInteractive = interactive;
             w.SourceInitialized += delegate(object s, EventArgs e)

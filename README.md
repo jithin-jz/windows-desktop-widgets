@@ -175,6 +175,13 @@ Positions, lock state, notes and weather live in
 Drag a card to move it — positions snap to an 8px grid and save immediately.
 Right-click any card for **Lock positions**, **Reset positions** and **Exit**.
 
+Saved positions are absolute points in Windows' virtual desktop space, which
+shifts when a monitor is added, removed or rearranged. On launch, any saved
+position that no longer fits the current screen is pulled back into the
+default grid spot instead of being left off-screen or wherever the shifted
+coordinate space put it; positions that are still valid are left exactly as
+you set them.
+
 Weather uses [Open-Meteo](https://open-meteo.com), which needs no API key.
 A failed refresh doesn't blank the card: it keeps showing the last
 successful reading and retries after 30 seconds (up to 3 times) rather than
