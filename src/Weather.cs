@@ -75,7 +75,25 @@ namespace KiroWidgets
                 r.Place = (cfg.Name == null ? "WEATHER" : cfg.Name.ToUpperInvariant());
                 return r;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return null;
+            }
+        }
+
+        private static void LogError(Exception ex)
+        {
+            try
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                           "KiroDesktopWidgets");
+                Directory.CreateDirectory(dir);
+                string line = DateTime.Now.ToString("s") + "  " + ex.GetType().FullName + ": " + ex.Message;
+                if (ex.InnerException != null) line += "  --> " + ex.InnerException.Message;
+                File.AppendAllText(Path.Combine(dir, "weather.log"), line + Environment.NewLine);
+            }
+            catch { }
         }
 
         private static double FirstOf(object array)

@@ -50,6 +50,17 @@ Useful switches: `-NoStartup` (don't run at logon), `-NoLaunch` (build only),
 Remove it with `.\uninstall.ps1` (add `-Purge` to also delete your layout and
 notes).
 
+### Updating
+
+The installer also sets up a `dwx` command (no admin rights needed - it's
+placed in `%LOCALAPPDATA%\Microsoft\WindowsApps`, which is on `PATH` by
+default on Windows 10+):
+
+```powershell
+dwx version   # shows your installed version and the latest one on GitHub
+dwx update    # re-runs the installer to pull and build the latest version
+```
+
 ### Requirements
 
 - Windows 10 or later (the media card uses WinRT media-session APIs)
@@ -192,12 +203,16 @@ the banner silently falls back rather than failing.
 ## Layout of this repo
 
 ```
+VERSION              current release, compared by `dwx version`
 build.cmd            one-command build, no SDK required
-install.ps1          installer (also works piped from the web)
+install.ps1          installer (also works piped from the web); also builds dwx
 uninstall.ps1        removal, keeps settings unless -Purge
 check-font.ps1       reports which font families WPF finds in fonts\
 launcher/
   DesktopWidgets.vbs starts the exe with no console window; builds it if missing
+cli/
+  Dwx.cs             `dwx version` / `dwx update`, built by cli\build.cmd
+  build.cmd          builds bin\dwx.exe
 fonts/               drop Anurati.otf here (not redistributed)
 src/
   WidgetApp.cs       app, layout, timers, wave progress, seeking

@@ -94,8 +94,8 @@ if ($running) {
 
 # ------------------------------------------------------------------ copy files
 New-Item -ItemType Directory -Force $InstallDir | Out-Null
-foreach ($item in 'src', 'launcher', 'fonts', 'build.cmd', 'check-font.ps1',
-    'install.ps1', 'install.cmd', 'uninstall.ps1', 'README.md', 'LICENSE') {
+foreach ($item in 'src', 'cli', 'launcher', 'fonts', 'build.cmd', 'check-font.ps1',
+    'install.ps1', 'install.cmd', 'uninstall.ps1', 'README.md', 'LICENSE', 'VERSION') {
     $from = Join-Path $srcRoot $item
     if (Test-Path $from) { Copy-Item $from -Destination $InstallDir -Recurse -Force }
 }
@@ -110,6 +110,31 @@ if ($LASTEXITCODE -ne 0) { Die 'build failed (output above)' }
 $exe = Join-Path $InstallDir 'bin\DesktopWidgets.exe'
 if (-not (Test-Path $exe)) { Die 'build reported success but produced no exe' }
 Good ('built DesktopWidgets.exe ({0:N0} KB)' -f ((Get-Item $exe).Length / 1KB))
+
+# --------------------------------------------------------------------------- cli
+# dwx: the `dwx version` / `dwx update` command. Optional - a fresh clone that
+# predates the cli\ folder still installs the widgets fine without it.
+$dwxBuild = Join-Path $InstallDir 'cli\build.cmd'
+if (Test-Path $dwxBuild) {
+    & cmd.exe /c "`"$dwxBuild`"" 2>&1 | ForEach-Object { Write-Host "    $_" }
+    $dwxExe = Join-Path $InstallDir 'bin\dwx.exe'
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $dwxExe)) {
+        # %LOCALAPPDATA%\Microsoft\WindowsApps is on PATH for every user by
+        # default on Windows 10+, so this makes `dwx` work from any shell
+        # without admin rights or editing PATH.
+        $winApps = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
+        try {
+            Copy-Item $dwxExe -Destination (Join-Path $winApps 'dwx.exe') -Force
+            Good 'dwx command installed (try: dwx version)'
+        }
+        catch {
+            Warn "could not place dwx.exe on PATH: $($_.Exception.Message)"
+        }
+    }
+    else {
+        Warn 'dwx build failed - the widgets still installed fine without it'
+    }
+}
 
 # --------------------------------------------------------------------- weather
 # Optional. The weather card shows a hint instead of data until this exists.

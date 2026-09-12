@@ -84,6 +84,8 @@ namespace KiroWidgets
         private WeatherConfig weatherConfig;
         private bool mediaBusy;
         private bool weatherBusy;
+        private bool weatherEverSucceeded;
+        private int weatherRetriesLeft;
         private bool suppressNotesSave;
 
         [STAThread]
@@ -782,7 +784,17 @@ namespace KiroWidgets
         }
 
         // ---------------------------------------------------------------- weather
-        private async void RefreshWeather()
+        // A single dropped request (Wi-Fi blip, DNS hiccup) should not blank the
+        // card for a full 15-minute cycle: keep showing the last good reading and
+        // retry sooner. Only the very first fetch (nothing to show yet) reports
+        // "Weather unavailable" on failure.
+        private void RefreshWeather()
+        {
+            weatherRetriesLeft = 3;
+            RefreshWeatherAttempt();
+        }
+
+        private async void RefreshWeatherAttempt()
         {
             if (weatherConfig == null)
             {
@@ -797,7 +809,7 @@ namespace KiroWidgets
                 WeatherReading r = await Task.Run(delegate { return Weather.Fetch(cfg); });
                 if (r == null)
                 {
-                    SetText("WxDesc", "Weather unavailable");
+                    OnWeatherFailed();
                     return;
                 }
                 string deg = "\u00B0";
@@ -806,9 +818,26 @@ namespace KiroWidgets
                 SetText("WxIcon", r.Glyph);
                 SetText("WxPlace", r.Place);
                 SetText("WxRange", "H:" + r.HighC + deg + "   L:" + r.LowC + deg);
+                weatherEverSucceeded = true;
             }
-            catch { SetText("WxDesc", "Weather unavailable"); }
+            catch { OnWeatherFailed(); }
             finally { weatherBusy = false; }
+        }
+
+        private void OnWeatherFailed()
+        {
+            if (!weatherEverSucceeded) SetText("WxDesc", "Weather unavailable");
+            if (weatherRetriesLeft <= 0) return;
+            weatherRetriesLeft--;
+
+            DispatcherTimer retry = new DispatcherTimer();
+            retry.Interval = TimeSpan.FromSeconds(30);
+            retry.Tick += delegate(object s, EventArgs e)
+            {
+                ((DispatcherTimer)s).Stop();
+                RefreshWeatherAttempt();
+            };
+            retry.Start();
         }
 
         // ---------------------------------------------------------------- notes

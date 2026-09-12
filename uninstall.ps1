@@ -48,6 +48,12 @@ else {
     Warn "no install found at $InstallDir"
 }
 
+$dwx = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\dwx.exe'
+if (Test-Path $dwx) {
+    Remove-Item $dwx -Force
+    Good 'removed the dwx command'
+}
+
 $stateDir = Join-Path $env:LOCALAPPDATA 'KiroDesktopWidgets'
 if ($Purge) {
     if (Test-Path $stateDir) {
