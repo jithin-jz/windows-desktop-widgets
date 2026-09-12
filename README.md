@@ -169,11 +169,16 @@ Positions, lock state, notes and weather live in
 | `layout.json` | Card positions and the lock flag |
 | `notes.txt` | The notes card |
 | `weather.json` | `{ "name": "City", "lat": 0.0, "lon": 0.0 }` |
+| `weather.log` | Appended on a failed weather fetch (network error, bad response) |
 
 Drag a card to move it — positions snap to an 8px grid and save immediately.
 Right-click any card for **Lock positions**, **Reset positions** and **Exit**.
 
 Weather uses [Open-Meteo](https://open-meteo.com), which needs no API key.
+A failed refresh doesn't blank the card: it keeps showing the last
+successful reading and retries after 30 seconds (up to 3 times) rather than
+waiting out the normal 15-minute cycle. `weather.log` records what actually
+failed, since a Wi-Fi blip and a real bug both used to just say "unavailable".
 
 ---
 
