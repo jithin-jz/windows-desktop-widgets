@@ -58,7 +58,8 @@ default on Windows 10+):
 
 ```powershell
 dwx version   # shows your installed version and the latest one on GitHub
-dwx update    # re-runs the installer to pull and build the latest version
+dwx install   # re-runs the installer - use this for a fresh/repair install
+dwx update    # same as dwx install, named for when you're pulling an update
 ```
 
 ### Requirements

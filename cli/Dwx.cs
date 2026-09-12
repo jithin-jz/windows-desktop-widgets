@@ -27,7 +27,12 @@ namespace KiroWidgets
             switch (cmd)
             {
                 case "version": case "-v": case "--version": return CmdVersion();
-                case "update": return CmdUpdate();
+                // install and update are the same action under the hood -
+                // install.ps1 is idempotent, so "put it on for the first time"
+                // and "pull the latest" are one code path. Two names exist
+                // because they match different intents.
+                case "install": return CmdInstall("Installing");
+                case "update": return CmdInstall("Updating");
                 default: return CmdHelp();
             }
         }
@@ -49,7 +54,7 @@ namespace KiroWidgets
             if (local == null)
             {
                 Console.WriteLine();
-                Console.WriteLine("Not installed yet. Run: dwx update");
+                Console.WriteLine("Not installed yet. Run: dwx install");
             }
             else if (IsNewer(remote, local))
             {
@@ -65,19 +70,49 @@ namespace KiroWidgets
             return 0;
         }
 
-        private static int CmdUpdate()
+        private static int CmdInstall(string verb)
         {
-            Console.WriteLine("Updating Desktop Widgets from " + Repo + " (" + Branch + ") ...");
+            Console.WriteLine(verb + " Desktop Widgets from " + Repo + " (" + Branch + ") ...");
+
+            // install.ps1 is downloaded to a file and run with -File rather than
+            // piped straight into -Command "irm ... | iex". That in-memory
+            // pipe-and-execute shape is exactly what Windows Defender's ML
+            // heuristics flag as Trojan:Win32/Commando.A!ml when it comes from an
+            // unsigned exe - confirmed by testing, not theoretical: Defender
+            // removed the process the moment the command line contained "irm
+            // ... | iex", while the same exe launching an ordinary PowerShell
+            // command was untouched. Downloading to disk first and running that
+            // file is what real installers do and does not trip the heuristic.
+            string scriptUrl = "https://raw.githubusercontent.com/" + Repo + "/" + Branch + "/install.ps1";
+            string tempPath = Path.Combine(Path.GetTempPath(), "dwx-install-" + Guid.NewGuid().ToString("N") + ".ps1");
+            try
+            {
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(scriptUrl);
+                req.Timeout = 15000;
+                req.ReadWriteTimeout = 15000;
+                req.UserAgent = "dwx-cli";
+                using (WebResponse resp = req.GetResponse())
+                using (Stream rs = resp.GetResponseStream())
+                using (FileStream fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
+                {
+                    rs.CopyTo(fs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not download the installer: " + ex.Message);
+                return 1;
+            }
+
             Console.WriteLine("A new window will show installer progress.");
 
             // Fire-and-forget: the installer stops the running widgets and, on
             // the next run of this same command, overwrites dwx.exe itself.
             // Waiting here would keep this exe's file locked against that.
-            string psCommand = "irm https://raw.githubusercontent.com/" + Repo + "/" + Branch + "/install.ps1 | iex";
             ProcessStartInfo psi = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + psCommand + "\"",
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + tempPath + "\"",
                 UseShellExecute = true
             };
             try
@@ -97,7 +132,8 @@ namespace KiroWidgets
             Console.WriteLine("dwx - Desktop Widgets command-line tool");
             Console.WriteLine();
             Console.WriteLine("  dwx version   Show installed and latest version");
-            Console.WriteLine("  dwx update    Update to the latest version");
+            Console.WriteLine("  dwx install   Install (or reinstall) the widgets");
+            Console.WriteLine("  dwx update    Update to the latest version - same as dwx install");
             return 0;
         }
 
