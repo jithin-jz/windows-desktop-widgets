@@ -428,10 +428,7 @@ namespace KiroWidgets
             DateTime now = DateTime.Now;
             SetText("TimeText", now.ToString("hh:mm", CultureInfo.CurrentCulture));
             SetText("AmPmText", now.ToString("tt", CultureInfo.CurrentCulture).ToUpperInvariant());
-            // Upper-cased because the clock card's day name is drawn in Anurati,
-            // which has no lowercase glyphs at all - a mixed-case day would
-            // render its first letter in Anurati and the rest in the fallback.
-            SetText("DayText", now.ToString("dddd", CultureInfo.CurrentCulture).ToUpperInvariant());
+            SetText("DayText", now.ToString("dddd", CultureInfo.CurrentCulture));
             SetText("DateText", now.ToString("dd MMM yyyy", CultureInfo.CurrentCulture).ToUpperInvariant());
             UpdateBanner(now.ToString("dddd", CultureInfo.CurrentCulture).ToUpperInvariant());
             UpdateWaveProgress();

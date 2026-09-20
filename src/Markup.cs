@@ -29,23 +29,6 @@ namespace KiroWidgets
         </Setter.Value>
       </Setter>
     </Style>
-    <!-- Anurati, the banner face, for fixed all-caps labels only.
-
-         The font ships 37 glyphs: A-Z, space and slash. There are no digits,
-         no lowercase and no punctuation, so it can only be pointed at text
-         that is guaranteed to be uppercase letters. Any other character falls
-         through to Century Gothic mid-word, which looks like a rendering fault
-         rather than a design - that is why every value on these cards (times,
-         temperatures, percentages, track names) stays on Segoe UI.
-
-         Sized a little larger than Cap because Anurati's cap height is 0.8 em
-         against Segoe UI's 0.7, and its strokes are hairline - at Cap's 11px
-         the letters start to break up. -->
-    <Style x:Key=""CapDisplay"" TargetType=""TextBlock"">
-      <Setter Property=""FontFamily"" Value=""__BANNERFONT__""/>
-      <Setter Property=""FontSize"" Value=""13""/>
-      <Setter Property=""Foreground"" Value=""#8CFFFFFF""/>
-    </Style>
     <Style x:Key=""Cap"" TargetType=""TextBlock"">
       <Setter Property=""FontFamily"" Value=""Segoe UI""/>
       <Setter Property=""FontSize"" Value=""11""/>
@@ -123,8 +106,8 @@ namespace KiroWidgets
     <StackPanel VerticalAlignment=""Center"">
       <TextBlock x:Name=""TimeText"" Text=""00:00"" FontFamily=""Segoe UI"" FontSize=""42""
                  FontWeight=""Thin"" Foreground=""White""/>
-      <TextBlock x:Name=""AmPmText"" Text=""AM"" Style=""{StaticResource CapDisplay}"" Margin=""2,-2,0,0""/>
-      <TextBlock x:Name=""DayText"" Text=""DAY"" FontFamily=""__BANNERFONT__"" FontSize=""15""
+      <TextBlock x:Name=""AmPmText"" Text=""AM"" Style=""{StaticResource Cap}"" Margin=""2,-2,0,0""/>
+      <TextBlock x:Name=""DayText"" Text=""Day"" FontFamily=""Segoe UI"" FontSize=""14""
                  FontWeight=""Light"" Foreground=""#E8FFFFFF"" Margin=""2,14,0,0""/>
       <TextBlock x:Name=""DateText"" Text=""Date"" Style=""{StaticResource Cap}"" Margin=""2,2,0,0""/>
     </StackPanel>
@@ -133,7 +116,7 @@ namespace KiroWidgets
         internal const string Weather =
 @"  <Border Style=""{StaticResource Card}"" Width=""__SMALL__"" Height=""__SMALL__"" Padding=""18,16,18,16"">
     <StackPanel>
-      <TextBlock x:Name=""WxPlace"" Text=""WEATHER"" Style=""{StaticResource CapDisplay}""
+      <TextBlock x:Name=""WxPlace"" Text=""WEATHER"" Style=""{StaticResource Cap}""
                  TextTrimming=""CharacterEllipsis""/>
       <StackPanel Orientation=""Horizontal"" Margin=""0,8,0,0"">
         <TextBlock x:Name=""WxTemp"" Text=""--"" FontFamily=""Segoe UI"" FontSize=""38""
@@ -196,7 +179,7 @@ namespace KiroWidgets
           </StackPanel>
         </Border>
         <StackPanel Grid.Column=""1"" VerticalAlignment=""Center"">
-          <TextBlock Text=""NOW PLAYING"" Style=""{StaticResource CapDisplay}"" Margin=""0,0,0,6""/>
+          <TextBlock Text=""NOW PLAYING"" Style=""{StaticResource Cap}"" Margin=""0,0,0,6""/>
           <TextBlock x:Name=""MediaTitle"" Text=""Nothing playing"" FontFamily=""Segoe UI"" FontSize=""14""
                      Foreground=""#F2FFFFFF"" MaxWidth=""176"" TextTrimming=""CharacterEllipsis""/>
           <TextBlock x:Name=""MediaArtist"" Text="""" Style=""{StaticResource Val}"" FontSize=""11""
@@ -241,10 +224,10 @@ namespace KiroWidgets
         internal const string SysStats =
 @"  <Border Style=""{StaticResource Card}"" Width=""__SMALL__"" Height=""__SMALL__"" Padding=""18,16,18,16"">
     <StackPanel>
-      <TextBlock Text=""SYSTEM"" Style=""{StaticResource CapDisplay}"" Margin=""0,0,0,12""/>
+      <TextBlock Text=""SYSTEM"" Style=""{StaticResource Cap}"" Margin=""0,0,0,12""/>
       <Grid Margin=""0,0,0,5"">
         <Grid.ColumnDefinitions><ColumnDefinition Width=""*""/><ColumnDefinition Width=""Auto""/></Grid.ColumnDefinitions>
-        <TextBlock Text=""CPU"" Style=""{StaticResource CapDisplay}"" Foreground=""#B8FFFFFF""/>
+        <TextBlock Text=""CPU"" Style=""{StaticResource Val}"" FontSize=""11"" Foreground=""#B8FFFFFF""/>
         <TextBlock x:Name=""CpuText"" Grid.Column=""1"" Text=""--"" Style=""{StaticResource Val}""/>
       </Grid>
       <Border Height=""4"" CornerRadius=""2"" Background=""#1FFFFFFF"" Margin=""0,0,0,12"">
@@ -252,7 +235,7 @@ namespace KiroWidgets
       </Border>
       <Grid Margin=""0,0,0,5"">
         <Grid.ColumnDefinitions><ColumnDefinition Width=""*""/><ColumnDefinition Width=""Auto""/></Grid.ColumnDefinitions>
-        <TextBlock Text=""RAM"" Style=""{StaticResource CapDisplay}"" Foreground=""#B8FFFFFF""/>
+        <TextBlock Text=""RAM"" Style=""{StaticResource Val}"" FontSize=""11"" Foreground=""#B8FFFFFF""/>
         <TextBlock x:Name=""RamText"" Grid.Column=""1"" Text=""--"" Style=""{StaticResource Val}""/>
       </Grid>
       <Border Height=""4"" CornerRadius=""2"" Background=""#1FFFFFFF"" Margin=""0,0,0,12"">
@@ -265,7 +248,7 @@ namespace KiroWidgets
         internal const string Notes =
 @"  <Border Style=""{StaticResource Card}"" Width=""__MEDIUM__"" Height=""__SMALL__"" Padding=""20,16,20,16"">
     <StackPanel>
-      <TextBlock Text=""NOTES"" Style=""{StaticResource CapDisplay}"" Margin=""0,0,0,8""/>
+      <TextBlock Text=""NOTES"" Style=""{StaticResource Cap}"" Margin=""0,0,0,8""/>
       <TextBox x:Name=""NotesBox"" Height=""96"" Background=""Transparent"" BorderThickness=""0""
                Foreground=""#F2FFFFFF"" FontFamily=""Segoe UI"" FontSize=""12""
                TextWrapping=""Wrap"" AcceptsReturn=""True"" VerticalScrollBarVisibility=""Auto""
@@ -276,7 +259,7 @@ namespace KiroWidgets
         internal const string Battery =
 @"  <Border Style=""{StaticResource Card}"" Width=""__SMALL__"" Height=""__SMALL__"" Padding=""18,16,18,16"">
     <StackPanel>
-      <TextBlock Text=""BATTERY"" Style=""{StaticResource CapDisplay}""/>
+      <TextBlock Text=""BATTERY"" Style=""{StaticResource Cap}""/>
       <TextBlock x:Name=""BattText"" Text=""--"" FontFamily=""Segoe UI"" FontSize=""40""
                  FontWeight=""Thin"" Foreground=""White"" Margin=""0,10,0,0""/>
       <TextBlock x:Name=""BattStatus"" Text=""--"" Style=""{StaticResource Val}"" FontSize=""12""
