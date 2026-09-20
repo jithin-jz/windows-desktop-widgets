@@ -71,7 +71,7 @@ namespace KiroWidgets
                 r.HighC = (int)Math.Round(FirstOf(daily["temperature_2m_max"]));
                 r.LowC = (int)Math.Round(FirstOf(daily["temperature_2m_min"]));
                 r.Description = Descriptions.ContainsKey(code) ? Descriptions[code] : "Weather";
-                r.Glyph = Glyphs.ContainsKey(code) ? Glyphs[code] : "\uE9CA";
+                r.Glyph = Glyphs.ContainsKey(code) ? Glyphs[code] : "\uE753";
                 r.Place = (cfg.Name == null ? "WEATHER" : cfg.Name.ToUpperInvariant());
                 return r;
             }
@@ -121,8 +121,20 @@ namespace KiroWidgets
         private static Dictionary<int, string> BuildGlyphs()
         {
             Dictionary<int, string> g = new Dictionary<int, string>();
-            string sun = "\uE706", partly = "\uE9BE", cloud = "\uE9CA", fog = "\uE9CB";
-            string drizzle = "\uE9C9", rain = "\uE9C4", snow = "\uE9C8", storm = "\uE9C6";
+            // Every codepoint below was verified present in Segoe Fluent Icons
+            // (C:\Windows\Fonts\SegoeIcons.ttf) by reading the font's own glyph
+            // map, not copied from an icon chart. That check matters: six of the
+            // eight codes this table used before were in neither Segoe Fluent
+            // Icons nor Segoe MDL2 Assets and rendered as empty tofu boxes, and
+            // a seventh - U+E9CA, used as the "cloud" and as the fallback - does
+            // exist but draws a thermometer.
+            //
+            // The font ships no sun-behind-cloud glyph, so "partly cloudy" shares
+            // the plain cloud with "overcast", and it has a single precipitation
+            // glyph, so drizzle and rain share it too. The description text under
+            // the icon is what tells those pairs apart.
+            string sun = "\uE706", partly = "\uE753", cloud = "\uE753", fog = "\uEDA8";
+            string drizzle = "\uEA91", rain = "\uEA91", snow = "\uEDAD", storm = "\uE945";
             g[0] = sun; g[1] = sun; g[2] = partly; g[3] = cloud;
             g[45] = fog; g[48] = fog;
             g[51] = drizzle; g[53] = drizzle; g[55] = drizzle;

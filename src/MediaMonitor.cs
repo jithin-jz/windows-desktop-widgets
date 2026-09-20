@@ -13,6 +13,13 @@ namespace KiroWidgets
         internal bool IsPlaying;
         /// <summary>Album art bytes, or null when unchanged or unavailable.</summary>
         internal byte[] Thumbnail;
+
+        // Thumbnail is non-null only on a poll that produced a *different*
+        // picture from the one already on screen, so a null Thumbnail normally
+        // means "nothing new", not "no art". This flag carries the one case
+        // that genuinely means no art, so the UI knows when to drop a cover
+        // rather than leaving the previous track's on screen.
+        internal bool ArtCleared;
         /// <summary>Identity of the current track, used to avoid re-decoding art.</summary>
         internal string TrackKey;
 
@@ -46,6 +53,19 @@ namespace KiroWidgets
 
         private GlobalSystemMediaTransportControlsSessionManager manager;
         private string lastTrackKey = "";
+
+        // Browsers publish their own app icon the instant playback starts and
+        // the real cover a beat later, so a single read per track latches the
+        // icon for the whole song. Re-reading for a short window after a track
+        // change picks up the correction; the window is bounded, so a long track
+        // costs a handful of extra reads rather than one every poll forever.
+        private static readonly TimeSpan ArtSettleWindow = TimeSpan.FromSeconds(16);
+
+        // -1 is "nothing decided for this track yet", which has to stay distinct
+        // from 0, the hash of "this track genuinely has no art".
+        private const long ArtUnknown = -1;
+        private long lastArtHash = ArtUnknown;
+        private DateTime artSettleUntil = DateTime.MinValue;
 
         internal async Task<MediaSnapshot> ReadAsync()
         {
@@ -81,7 +101,24 @@ namespace KiroWidgets
                     if (snap.TrackKey != lastTrackKey)
                     {
                         lastTrackKey = snap.TrackKey;
-                        snap.Thumbnail = await ReadThumbnailAsync(props);
+                        lastArtHash = ArtUnknown;
+                        artSettleUntil = DateTime.UtcNow + ArtSettleWindow;
+                    }
+
+                    if (DateTime.UtcNow < artSettleUntil)
+                    {
+                        byte[] art = await ReadThumbnailAsync(props);
+                        long hash = ArtHash(art);
+
+                        // Only hand the bytes up when the picture actually
+                        // changed, so a steady cover is decoded once rather than
+                        // on every poll of the settle window.
+                        if (hash != lastArtHash)
+                        {
+                            lastArtHash = hash;
+                            if (art != null) snap.Thumbnail = art;
+                            else snap.ArtCleared = true;
+                        }
                     }
                 }
 
@@ -138,6 +175,27 @@ namespace KiroWidgets
                     session.TryChangePlaybackPositionAsync(position.Ticks));
             }
             catch { return false; }
+        }
+
+        /// <summary>
+        /// FNV-1a over the encoded bytes. This only has to answer "same picture
+        /// as last poll?", and the value never leaves the process, so a fast
+        /// non-cryptographic hash is the right tool - it costs one pass over
+        /// ~25 KB instead of decoding the image to compare it.
+        /// </summary>
+        private static long ArtHash(byte[] bytes)
+        {
+            if (bytes == null) return 0;
+            ulong h = 14695981039346656037UL;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                h ^= bytes[i];
+                h *= 1099511628211UL;
+            }
+            long v = (long)(h & 0x7FFFFFFFFFFFFFFFUL);
+            // 0 is reserved for "no art" and -1 for "undecided", so a real
+            // picture must never hash to either.
+            return (v == 0 || v == ArtUnknown) ? 1 : v;
         }
 
         /// <summary>

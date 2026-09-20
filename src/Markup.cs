@@ -121,7 +121,7 @@ namespace KiroWidgets
       <StackPanel Orientation=""Horizontal"" Margin=""0,8,0,0"">
         <TextBlock x:Name=""WxTemp"" Text=""--"" FontFamily=""Segoe UI"" FontSize=""38""
                    FontWeight=""Thin"" Foreground=""White""/>
-        <TextBlock x:Name=""WxIcon"" Text=""&#xE9CA;"" FontFamily=""Segoe Fluent Icons, Segoe MDL2 Assets""
+        <TextBlock x:Name=""WxIcon"" Text=""&#xE753;"" FontFamily=""Segoe Fluent Icons, Segoe MDL2 Assets""
                    FontSize=""22"" Foreground=""#E0FFFFFF"" VerticalAlignment=""Center"" Margin=""8,4,0,0""/>
       </StackPanel>
       <TextBlock x:Name=""WxDesc"" Text=""Not set"" Style=""{StaticResource Val}"" FontSize=""12""
@@ -140,11 +140,43 @@ namespace KiroWidgets
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width=""Auto""/><ColumnDefinition Width=""*""/>
         </Grid.ColumnDefinitions>
+        <!-- BitmapScalingMode=HighQuality switches WPF from its default bilinear
+             resample to Fant. Cover art arrives at whatever size the player felt
+             like sending - often 300px or more for a 96px slot - and bilinear
+             only reads a 2x2 neighbourhood, so a >2x downscale throws away most
+             of the detail and leaves the art looking soft. Fant area-averages
+             the whole footprint instead. -->
         <Border x:Name=""ArtBorder"" Width=""96"" Height=""96"" CornerRadius=""14""
-                Background=""#26FFFFFF"" VerticalAlignment=""Center"" Margin=""0,0,16,0"">
-          <TextBlock x:Name=""ArtGlyph"" Text=""&#xE8D6;"" FontFamily=""Segoe Fluent Icons, Segoe MDL2 Assets""
-                     FontSize=""28"" Foreground=""#8CFFFFFF""
-                     HorizontalAlignment=""Center"" VerticalAlignment=""Center""/>
+                Background=""#26FFFFFF"" VerticalAlignment=""Center"" Margin=""0,0,16,0""
+                RenderOptions.BitmapScalingMode=""HighQuality"">
+          <!-- Shown when a track has no cover art. The four bars carry a hue
+               ramp - aqua, sky, lavender, pink - held in the same lightness band
+               as the CPU, RAM and battery bars, so the whole app reads as one
+               palette rather than four unrelated accents.
+ Each bar is laid out at full
+               height once and squashed by a ScaleTransform, rather than having
+               its Height animated: a transform is applied on the render thread,
+               while four animated Heights would re-run a layout pass on this
+               panel every frame for the whole time a track plays. -->
+          <StackPanel x:Name=""ArtBeat"" Orientation=""Horizontal"" Height=""36""
+                      HorizontalAlignment=""Center"" VerticalAlignment=""Center"">
+            <Border x:Name=""Beat1"" Width=""6"" Height=""36"" CornerRadius=""3"" Background=""#FF8FE8D8""
+                    Margin=""3,0,3,0"" VerticalAlignment=""Bottom"" RenderTransformOrigin=""0.5,1"">
+              <Border.RenderTransform><ScaleTransform ScaleY=""0.28""/></Border.RenderTransform>
+            </Border>
+            <Border x:Name=""Beat2"" Width=""6"" Height=""36"" CornerRadius=""3"" Background=""#FF87CEFA""
+                    Margin=""3,0,3,0"" VerticalAlignment=""Bottom"" RenderTransformOrigin=""0.5,1"">
+              <Border.RenderTransform><ScaleTransform ScaleY=""0.28""/></Border.RenderTransform>
+            </Border>
+            <Border x:Name=""Beat3"" Width=""6"" Height=""36"" CornerRadius=""3"" Background=""#FFC4B5FD""
+                    Margin=""3,0,3,0"" VerticalAlignment=""Bottom"" RenderTransformOrigin=""0.5,1"">
+              <Border.RenderTransform><ScaleTransform ScaleY=""0.28""/></Border.RenderTransform>
+            </Border>
+            <Border x:Name=""Beat4"" Width=""6"" Height=""36"" CornerRadius=""3"" Background=""#FFF9B8D8""
+                    Margin=""3,0,3,0"" VerticalAlignment=""Bottom"" RenderTransformOrigin=""0.5,1"">
+              <Border.RenderTransform><ScaleTransform ScaleY=""0.28""/></Border.RenderTransform>
+            </Border>
+          </StackPanel>
         </Border>
         <StackPanel Grid.Column=""1"" VerticalAlignment=""Center"">
           <TextBlock Text=""NOW PLAYING"" Style=""{StaticResource Cap}"" Margin=""0,0,0,6""/>
@@ -172,17 +204,16 @@ namespace KiroWidgets
             Margin=""0,0,0,-6"" Background=""Transparent"">
         <Path x:Name=""WaveDim"" Stroke=""#33FFFFFF"" StrokeThickness=""1.6""
               StrokeStartLineCap=""Round"" StrokeEndLineCap=""Round""/>
-        <!-- The lit wave carries the whole green-to-rose ramp across its full
-             width, and the clip reveals it left to right. So the colour at the
-             leading edge is the colour for that point in the track: green near
-             the start, amber through the middle, rose towards the end. -->
+        <!-- The lit wave carries the whole white-to-sky-blue ramp across its
+             full width, and the clip reveals it left to right. So the colour
+             at the leading edge is the colour for that point in the track:
+             white near the start, deepening to sky blue towards the end. -->
         <Path x:Name=""WaveLit"" StrokeThickness=""1.6""
               StrokeStartLineCap=""Round"" StrokeEndLineCap=""Round"">
           <Path.Stroke>
             <LinearGradientBrush StartPoint=""0,0"" EndPoint=""1,0"">
-              <GradientStop Offset=""0"" Color=""#34D399""/>
-              <GradientStop Offset=""0.5"" Color=""#FBA94C""/>
-              <GradientStop Offset=""1"" Color=""#FB7185""/>
+              <GradientStop Offset=""0"" Color=""#FFFFFF""/>
+              <GradientStop Offset=""1"" Color=""#38BDF8""/>
             </LinearGradientBrush>
           </Path.Stroke>
         </Path>
@@ -200,7 +231,7 @@ namespace KiroWidgets
         <TextBlock x:Name=""CpuText"" Grid.Column=""1"" Text=""--"" Style=""{StaticResource Val}""/>
       </Grid>
       <Border Height=""4"" CornerRadius=""2"" Background=""#1FFFFFFF"" Margin=""0,0,0,12"">
-        <Border x:Name=""CpuBar"" HorizontalAlignment=""Left"" Width=""0"" Height=""4"" CornerRadius=""2"" Background=""#FF5E9BFF""/>
+        <Border x:Name=""CpuBar"" HorizontalAlignment=""Left"" Width=""0"" Height=""4"" CornerRadius=""2"" Background=""#FF87CEFA""/>
       </Border>
       <Grid Margin=""0,0,0,5"">
         <Grid.ColumnDefinitions><ColumnDefinition Width=""*""/><ColumnDefinition Width=""Auto""/></Grid.ColumnDefinitions>
@@ -208,7 +239,7 @@ namespace KiroWidgets
         <TextBlock x:Name=""RamText"" Grid.Column=""1"" Text=""--"" Style=""{StaticResource Val}""/>
       </Grid>
       <Border Height=""4"" CornerRadius=""2"" Background=""#1FFFFFFF"" Margin=""0,0,0,12"">
-        <Border x:Name=""RamBar"" HorizontalAlignment=""Left"" Width=""0"" Height=""4"" CornerRadius=""2"" Background=""#FF7DDE8A""/>
+        <Border x:Name=""RamBar"" HorizontalAlignment=""Left"" Width=""0"" Height=""4"" CornerRadius=""2"" Background=""#FFC4B5FD""/>
       </Border>
       <TextBlock x:Name=""DiskText"" Text="""" Style=""{StaticResource Cap}""/>
     </StackPanel>
@@ -234,7 +265,7 @@ namespace KiroWidgets
       <TextBlock x:Name=""BattStatus"" Text=""--"" Style=""{StaticResource Val}"" FontSize=""12""
                  Foreground=""#E0FFFFFF"" Margin=""1,2,0,0""/>
       <Border Height=""5"" CornerRadius=""3"" Background=""#1FFFFFFF"" Margin=""0,14,0,0"">
-        <Border x:Name=""BattBar"" HorizontalAlignment=""Left"" Width=""0"" Height=""5"" CornerRadius=""3"" Background=""#FF7DDE8A""/>
+        <Border x:Name=""BattBar"" HorizontalAlignment=""Left"" Width=""0"" Height=""5"" CornerRadius=""3"" Background=""#FF8FE8D8""/>
       </Border>
     </StackPanel>
   </Border>";

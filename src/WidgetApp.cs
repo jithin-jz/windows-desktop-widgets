@@ -167,7 +167,8 @@ namespace KiroWidgets
             Register(weather, "WxPlace", "WxIcon", "WxTemp", "WxDesc", "WxRange");
 
             Window player = NewWidget("Media", Markup.Media, x1, y2, blockW, Unit, false, wa);
-            Register(player, "MediaTitle", "MediaArtist", "BtnPrev", "BtnPlay", "BtnNext", "ArtBorder", "ArtGlyph",
+            Register(player, "MediaTitle", "MediaArtist", "BtnPrev", "BtnPlay", "BtnNext", "ArtBorder",
+                     "ArtBeat", "Beat1", "Beat2", "Beat3", "Beat4",
                      "WaveDim", "WaveLit", "WaveHost");
 
             Window system = NewWidget("System", Markup.SysStats, x1, y3, Unit, Unit, false, wa);
@@ -448,6 +449,27 @@ namespace KiroWidgets
         // eight glyphs divided by the seven gaps gives this figure.
         private const double BannerTrackingEm = 0.4714;
 
+        // The banner is drawn letter by letter, so colour can vary per glyph
+        // without a gradient brush. Frozen once at type load: these two brushes
+        // are shared by every letter and never change, and a frozen Freezable
+        // skips WPF's per-assignment change-notification plumbing.
+        private static readonly Brush BannerWhite =
+            Freeze(new SolidColorBrush(Color.FromArgb(0xF2, 0xFF, 0xFF, 0xFF)));
+        private static readonly Brush BannerSky =
+            Freeze(new SolidColorBrush(Color.FromArgb(0xF2, 0x87, 0xCE, 0xFA)));
+
+        private static Brush Freeze(SolidColorBrush b) { b.Freeze(); return b; }
+
+        /// <summary>
+        /// Colour for one letter of the weekday banner. Alternating glyphs read
+        /// as a deliberate two-tone word rather than a rendering fault, which a
+        /// random or lopsided split does not.
+        /// </summary>
+        private static Brush BannerLetterBrush(int index, int length)
+        {
+            return (index % 2 == 0) ? BannerWhite : BannerSky;
+        }
+
         private string bannerDayShown = "";
 
         private void UpdateBanner(string day)
@@ -465,6 +487,7 @@ namespace KiroWidgets
             {
                 TextBlock letter = new TextBlock();
                 letter.Text = day[i].ToString();
+                letter.Foreground = BannerLetterBrush(i, day.Length);
                 // Trailing margin is the gap, so the final letter must not carry
                 // one or the word sits off-centre by half a gap.
                 if (i < day.Length - 1) letter.Margin = new Thickness(0, 0, tracking, 0);
@@ -568,23 +591,77 @@ namespace KiroWidgets
             if (snap.Title != null) SetText("MediaTitle", snap.Title);
             if (snap.Artist != null) SetText("MediaArtist", snap.Artist);
             if (play != null) play.Content = snap.IsPlaying ? "\uE769" : "\uE768";
+            // Three distinct cases, and conflating any two of them shows the
+            // wrong thing:
+            //   new picture   -> paint it
+            //   art cleared   -> this track has none, run the equaliser
+            //   nothing new   -> leave whatever is on screen alone
             if (snap.Thumbnail != null) SetArt(snap.Thumbnail);
+            else if (snap.ArtCleared) ClearArt();
 
             UpdateWaveProgress();
+        }
+
+        // ----------------------------------------------------------- art fallback
+        // Four bars, each with its own period and peak. The periods are chosen
+        // not to be multiples of one another: whole-number ratios make the bars
+        // resynchronise into a single block every few seconds, which is exactly
+        // what gives a fake equaliser away.
+        private static readonly string[] BeatBars = { "Beat1", "Beat2", "Beat3", "Beat4" };
+        private static readonly double[] BeatPeriods = { 0.62, 0.47, 0.73, 0.55 };
+        private static readonly double[] BeatPeaks = { 0.85, 1.00, 0.62, 0.92 };
+        private const double BeatRest = 0.28;
+
+        /// <summary>
+        /// Runs the equaliser while something is actually playing, and parks the
+        /// bars at a flat resting height when it is not - a paused track that
+        /// keeps dancing reads as a bug.
+        /// </summary>
+        private void SetBeat(bool running)
+        {
+            for (int i = 0; i < BeatBars.Length; i++)
+            {
+                Border bar = ui.ContainsKey(BeatBars[i]) ? ui[BeatBars[i]] as Border : null;
+                if (bar == null) continue;
+                ScaleTransform st = bar.RenderTransform as ScaleTransform;
+                if (st == null) continue;
+
+                if (!running)
+                {
+                    // Passing null hands the property back to its local value.
+                    // Without it the bar freezes at whatever height the animation
+                    // happened to be at when it stopped.
+                    st.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                    st.ScaleY = BeatRest;
+                    continue;
+                }
+
+                DoubleAnimation a = new DoubleAnimation();
+                a.From = BeatRest;
+                a.To = BeatPeaks[i];
+                a.Duration = new Duration(TimeSpan.FromSeconds(BeatPeriods[i]));
+                a.AutoReverse = true;
+                a.RepeatBehavior = RepeatBehavior.Forever;
+                SineEase ease = new SineEase();
+                ease.EasingMode = EasingMode.EaseInOut;
+                a.EasingFunction = ease;
+                st.BeginAnimation(ScaleTransform.ScaleYProperty, a);
+            }
         }
 
         private void ClearArt()
         {
             Border art = ui.ContainsKey("ArtBorder") ? ui["ArtBorder"] as Border : null;
-            TextBlock glyph = Text("ArtGlyph");
+            StackPanel beat = ui.ContainsKey("ArtBeat") ? ui["ArtBeat"] as StackPanel : null;
             if (art != null) art.Background = new SolidColorBrush(Color.FromArgb(38, 255, 255, 255));
-            if (glyph != null) glyph.Visibility = Visibility.Visible;
+            if (beat != null) beat.Visibility = Visibility.Visible;
+            SetBeat(mediaPlaying);
         }
 
         private void SetArt(byte[] bytes)
         {
             Border art = ui.ContainsKey("ArtBorder") ? ui["ArtBorder"] as Border : null;
-            TextBlock glyph = Text("ArtGlyph");
+            StackPanel beat = ui.ContainsKey("ArtBeat") ? ui["ArtBeat"] as StackPanel : null;
             if (art == null) return;
             try
             {
@@ -600,7 +677,10 @@ namespace KiroWidgets
                 ImageBrush brush = new ImageBrush(bmp);
                 brush.Stretch = Stretch.UniformToFill;
                 art.Background = brush;
-                if (glyph != null) glyph.Visibility = Visibility.Collapsed;
+                if (beat != null) beat.Visibility = Visibility.Collapsed;
+                // Stop the equaliser once it is hidden: an animation on a
+                // collapsed element still ticks the composition clock forever.
+                SetBeat(false);
             }
             catch { ClearArt(); }
         }
