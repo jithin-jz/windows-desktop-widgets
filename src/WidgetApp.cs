@@ -611,6 +611,7 @@ namespace KiroWidgets
         private static readonly double[] BeatPeriods = { 0.62, 0.47, 0.73, 0.55 };
         private static readonly double[] BeatPeaks = { 0.85, 1.00, 0.62, 0.92 };
         private const double BeatRest = 0.28;
+        private const int BeatFrameRate = 15;
 
         /// <summary>
         /// Runs the equaliser while something is actually playing, and parks the
@@ -645,6 +646,15 @@ namespace KiroWidgets
                 SineEase ease = new SineEase();
                 ease.EasingMode = EasingMode.EaseInOut;
                 a.EasingFunction = ease;
+                // Every widget window sets AllowsTransparency=True, which puts
+                // WPF into software rendering - there is no GPU compositing for
+                // a layered window. On top of that the card carries a 28px
+                // DropShadowEffect, and WPF re-runs an effect over the whole
+                // subtree whenever any descendant changes. So each animation
+                // frame re-blurs the entire media card on the CPU. At the
+                // default 60fps that measured ~56% of one core; an equaliser
+                // does not need anywhere near that many frames.
+                Timeline.SetDesiredFrameRate(a, BeatFrameRate);
                 st.BeginAnimation(ScaleTransform.ScaleYProperty, a);
             }
         }
