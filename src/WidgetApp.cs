@@ -189,6 +189,15 @@ namespace KiroWidgets
             if (bx < minX) bx = minX;
             Window banner = NewWidget("DayBanner", Markup.DayBanner, bx, by, BannerWidth, BannerSize, false, wa);
             Register(banner, "BannerRow");
+
+            // BannerWidth (760) is a fixed design ceiling, but the card grid's
+            // actual left edge (x1) moves with the work area - at 150% scaling on
+            // a 1920x1200 panel, WPF's DPI-aware work area is ~1280 logical px
+            // wide, which pulls x1 in far enough that even a word narrower than
+            // 760 can still reach past it. The true limit for a centred word is
+            // twice its distance from screen centre to x1, less a card-grid gutter.
+            double centerX = wa.Left + (wa.Width / 2.0);
+            bannerMaxTextWidth = Math.Min(BannerWidth, (x1 - Gutter - centerX) * 2);
         }
 
         private Window NewWidget(string name, string body, double defLeft, double defTop,
@@ -449,28 +458,26 @@ namespace KiroWidgets
         // eight glyphs divided by the seven gaps gives this figure.
         private const double BannerTrackingEm = 0.4714;
 
-        // The banner is drawn letter by letter, so colour can vary per glyph
-        // without a gradient brush. Frozen once at type load: these two brushes
-        // are shared by every letter and never change, and a frozen Freezable
-        // skips WPF's per-assignment change-notification plumbing.
+        // The banner is drawn letter by letter. Frozen once at type load: this
+        // brush is shared by every letter and never changes, and a frozen
+        // Freezable skips WPF's per-assignment change-notification plumbing.
         private static readonly Brush BannerWhite =
             Freeze(new SolidColorBrush(Color.FromArgb(0xF2, 0xFF, 0xFF, 0xFF)));
-        private static readonly Brush BannerSky =
-            Freeze(new SolidColorBrush(Color.FromArgb(0xF2, 0x87, 0xCE, 0xFA)));
 
         private static Brush Freeze(SolidColorBrush b) { b.Freeze(); return b; }
 
-        /// <summary>
-        /// Colour for one letter of the weekday banner. Alternating glyphs read
-        /// as a deliberate two-tone word rather than a rendering fault, which a
-        /// random or lopsided split does not.
-        /// </summary>
-        private static Brush BannerLetterBrush(int index, int length)
-        {
-            return (index % 2 == 0) ? BannerWhite : BannerSky;
-        }
-
         private string bannerDayShown = "";
+
+        // Set once in BuildWidgets from the real card-grid position; BannerWidth
+        // is only the fallback before that runs.
+        private double bannerMaxTextWidth = BannerWidth;
+
+        // BannerSize is tuned against THURSDAY (8 letters); WEDNESDAY (9) runs
+        // wider still and can outgrow the space actually free of the card grid
+        // (bannerMaxTextWidth) - which is what was clipping the trailing Y.
+        // Shrinking the font for the long names keeps every letter clear of the
+        // cards, rather than making the reserved area bigger for one word a week.
+        private const double BannerMinScale = 0.75;
 
         private void UpdateBanner(string day)
         {
@@ -481,13 +488,27 @@ namespace KiroWidgets
             if (day == bannerDayShown) return;
             bannerDayShown = day;
 
-            double tracking = BannerTrackingEm * BannerSize;
+            BuildBannerLetters(row, day, BannerSize);
+            row.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+            double naturalWidth = row.DesiredSize.Width;
+            if (naturalWidth > bannerMaxTextWidth)
+            {
+                double scale = Math.Max(BannerMinScale, bannerMaxTextWidth / naturalWidth);
+                BuildBannerLetters(row, day, BannerSize * scale);
+            }
+        }
+
+        private static void BuildBannerLetters(StackPanel row, string day, double fontSize)
+        {
+            double tracking = BannerTrackingEm * fontSize;
             row.Children.Clear();
             for (int i = 0; i < day.Length; i++)
             {
                 TextBlock letter = new TextBlock();
                 letter.Text = day[i].ToString();
-                letter.Foreground = BannerLetterBrush(i, day.Length);
+                letter.Foreground = BannerWhite;
+                letter.FontSize = fontSize;
                 // Trailing margin is the gap, so the final letter must not carry
                 // one or the word sits off-centre by half a gap.
                 if (i < day.Length - 1) letter.Margin = new Thickness(0, 0, tracking, 0);
