@@ -600,10 +600,13 @@ namespace KiroWidgets
 
             if (!snap.HasSession)
             {
-                SetText("MediaTitle", "Nothing playing");
+                SetText("MediaTitle", "");
                 SetText("MediaArtist", "");
                 if (play != null) play.Content = "\uE768";
+                // Idle: an empty tile, not the equaliser - the bars would
+                // suggest something is loaded when nothing is.
                 ClearArt();
+                SetBeatVisible(false);
                 mediaHasTimeline = false;
                 UpdateWaveProgress();
                 return;
@@ -621,6 +624,12 @@ namespace KiroWidgets
             else if (snap.ArtCleared) ClearArt();
 
             UpdateWaveProgress();
+        }
+
+        private void SetBeatVisible(bool visible)
+        {
+            StackPanel beat = ui.ContainsKey("ArtBeat") ? ui["ArtBeat"] as StackPanel : null;
+            if (beat != null) beat.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // ----------------------------------------------------------- art fallback
