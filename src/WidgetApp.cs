@@ -410,6 +410,7 @@ namespace KiroWidgets
             AddTimer(TimeSpan.FromSeconds(1), delegate { UpdateClock(); });
             AddTimer(TimeSpan.FromSeconds(3), delegate { UpdateStats(); });
             AddTimer(TimeSpan.FromSeconds(2), delegate { RefreshMedia(); });
+            AddTimer(TimeSpan.FromSeconds(PhotoSeconds), delegate { if (mediaIdle) ShowRandomPhoto(); });
             AddTimer(TimeSpan.FromMinutes(15), delegate { RefreshWeather(); });
 
             // Safety net: Explorer restarts, wallpaper changes and display switches
@@ -603,13 +604,28 @@ namespace KiroWidgets
                 SetText("MediaTitle", "");
                 SetText("MediaArtist", "");
                 if (play != null) play.Content = "\uE768";
-                // Idle: an empty tile, not the equaliser - the bars would
-                // suggest something is loaded when nothing is.
-                ClearArt();
-                SetBeatVisible(false);
                 mediaHasTimeline = false;
                 UpdateWaveProgress();
+                // Idle: a photo from Pictures instead of the equaliser - the
+                // bars would suggest something is loaded when nothing is. Set
+                // up once on the way in; repeating it every poll would wipe
+                // the photo each time.
+                if (!mediaIdle)
+                {
+                    mediaIdle = true;
+                    ClearArt();
+                    SetBeatVisible(false);
+                    ShowRandomPhoto();
+                }
                 return;
+            }
+
+            if (mediaIdle)
+            {
+                // Drop the slideshow picture, or it would pass for the new
+                // track's cover until the real art arrives.
+                mediaIdle = false;
+                ClearArt();
             }
 
             if (snap.Title != null) SetText("MediaTitle", snap.Title);
@@ -630,6 +646,27 @@ namespace KiroWidgets
         {
             StackPanel beat = ui.ContainsKey("ArtBeat") ? ui["ArtBeat"] as StackPanel : null;
             if (beat != null) beat.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // ------------------------------------------------------------ idle photos
+        private const int PhotoSeconds = 20;
+        private readonly PhotoShuffle photos = new PhotoShuffle();
+        private bool mediaIdle;
+        private bool photoBusy;
+
+        private async void ShowRandomPhoto()
+        {
+            if (photoBusy) return;
+            photoBusy = true;
+            try
+            {
+                BitmapSource bmp = await photos.NextAsync();
+                // Null means Pictures had nothing usable: keep the empty tile.
+                // A track may also have started while this one was decoding.
+                if (bmp != null && mediaIdle) PaintArt(bmp);
+            }
+            catch { }
+            finally { photoBusy = false; }
         }
 
         // ----------------------------------------------------------- art fallback
@@ -700,9 +737,6 @@ namespace KiroWidgets
 
         private void SetArt(byte[] bytes)
         {
-            Border art = ui.ContainsKey("ArtBorder") ? ui["ArtBorder"] as Border : null;
-            StackPanel beat = ui.ContainsKey("ArtBeat") ? ui["ArtBeat"] as StackPanel : null;
-            if (art == null) return;
             try
             {
                 BitmapImage bmp = new BitmapImage();
@@ -714,15 +748,23 @@ namespace KiroWidgets
                     bmp.EndInit();
                 }
                 bmp.Freeze();
-                ImageBrush brush = new ImageBrush(bmp);
-                brush.Stretch = Stretch.UniformToFill;
-                art.Background = brush;
-                if (beat != null) beat.Visibility = Visibility.Collapsed;
-                // Stop the equaliser once it is hidden: an animation on a
-                // collapsed element still ticks the composition clock forever.
-                SetBeat(false);
+                PaintArt(bmp);
             }
             catch { ClearArt(); }
+        }
+
+        /// <summary>Fills the art tile with a picture - cover art or an idle photo.</summary>
+        private void PaintArt(BitmapSource bmp)
+        {
+            Border art = ui.ContainsKey("ArtBorder") ? ui["ArtBorder"] as Border : null;
+            if (art == null) return;
+            ImageBrush brush = new ImageBrush(bmp);
+            brush.Stretch = Stretch.UniformToFill;
+            art.Background = brush;
+            SetBeatVisible(false);
+            // Stop the equaliser once it is hidden: an animation on a
+            // collapsed element still ticks the composition clock forever.
+            SetBeat(false);
         }
 
         // ------------------------------------------------------------------ wave
